@@ -1,0 +1,30 @@
+const express = require('express');
+const axios = require('axios');
+require('dotenv').config();
+
+const app = express();
+const PORT = 3000;
+
+const PAGE_ID = process.env.PAGE_ID;
+const POST_ID = process.env.POST_ID;
+const ACCESS_TOKEN = process.env.ACCESS_TOKEN;
+
+app.use(express.static('public'));
+
+app.get('/api/votes', async (req, res) => {
+  try {
+    const url = `https://graph.facebook.com/v18.0/${POST_ID}?fields=reactions.type(LIKE).limit(0).summary(true),reactions.type(LOVE).limit(0).summary(true)&access_token=${ACCESS_TOKEN}`;
+    const response = await axios.get(url);
+    const likeCount = response.data.reactions.data.find(r => r.type === 'LIKE')?.summary.total_count || 0;
+    const loveCount = response.data.reactions.data.find(r => r.type === 'LOVE')?.summary.total_count || 0;
+
+    res.json({
+      optionA: likeCount,
+      optionB: loveCount
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.toString() });
+  }
+});
+
+app.listen(PORT, () => console.log(`Server running on http://localhost:${PORT}`));
